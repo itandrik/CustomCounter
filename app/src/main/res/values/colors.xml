@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <!-- needed -->
+    <color name="counter_center_element">#1E2832</color>
+    <color name="counter_outside_center_element">#24303B</color>
+    <color name="fade_counter">#06303B</color>
+    <color name="transparent">#00ffffff</color>
+</resources>
