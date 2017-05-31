@@ -16,32 +16,27 @@ import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
-import android.view.Gravity;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
-
-import static android.R.attr.x;
-import static android.R.attr.y;
 
 /**
  * @author Andrii Chernysh
  *         Developed by <u>Ubrainians</u>
  */
 
-public class MyTv extends View {
+public class MyTv extends View implements ViewTreeObserver.OnGlobalLayoutListener {
     Paint paint;
     Paint bgPaint;
+    Paint secondTextPaint;
 
     private String textCurrent = "0000";
-    private String textNext = "0001";
+    private String textNext = "1111";
     private String textAfterNext = "0001";
     private int fontSize;
     private float xCurrent = 0f;
     private float yCurrent = 0f;
-    private float shaderY1;
-    private float shaderY2;
-
+    private Rect textBounds;
     Shader textShader;
     private boolean isStarted = false;
 
@@ -54,83 +49,68 @@ public class MyTv extends View {
         fontSize = convertSpToPixels(70, context);
         Log.d("LOG_TAG", "fontSize : " + fontSize);
 
+        initPaints(context);
+
+        textBounds = new Rect();
+        paint.getTextBounds(textCurrent, 0, textCurrent.length(), textBounds);
+
+        getViewTreeObserver().addOnGlobalLayoutListener(this);
+    }
+
+    private void initPaints(Context context) {
         paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.LINEAR_TEXT_FLAG);
         paint.setTextSize(fontSize);
         paint.setStyle(Paint.Style.STROKE);
         paint.setColor(Color.WHITE);
+        paint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.BOLD));
 
         bgPaint = new Paint();
         bgPaint.setStyle(Paint.Style.FILL);
-        bgPaint.setColor(ContextCompat.getColor(context,R.color.counter_outside_center_element));
+        bgPaint.setColor(ContextCompat.getColor(context, R.color.counter_outside_center_element));
 
-        final Rect textBounds = new Rect();
-        paint.getTextBounds(textCurrent,0,textCurrent.length(),textBounds);
-
-        getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                FrameLayout.LayoutParams params =
-                        new FrameLayout.LayoutParams((int)(paint.measureText(textCurrent) +
-                                convertDpToPixel(32,getContext())),
-                                (int) textBounds.height()*3);
-                params.gravity = Gravity.CENTER_VERTICAL|Gravity.START;
-
-                setLayoutParams(params);
-
-                xCurrent = getLeft() + convertDpToPixel(8,getContext());
-                yCurrent = getTop() + textBounds.height() + convertDpToPixel(8,getContext());//+ convertDpToPixel(70,getContext());
-
-                shaderY1 = yCurrent + textBounds.height() + convertDpToPixel(16,getContext());
-                shaderY2 = yCurrent - (textBounds.height());
-
-                textShader = new LinearGradient(x + (paint.measureText(textCurrent) / 2f),
-                        shaderY1,
-                        x + (paint.measureText(textCurrent) / 2f),
-                        shaderY2,
-                        new int[]{Color.TRANSPARENT, Color.WHITE},
-                        new float[]{0, 1}, Shader.TileMode.CLAMP);
-            }
-        });
+        secondTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.LINEAR_TEXT_FLAG);
+        secondTextPaint.setTextSize(fontSize);
+        secondTextPaint.setStyle(Paint.Style.STROKE);
+        secondTextPaint.setColor(Color.WHITE);
+        secondTextPaint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.BOLD));
     }
 
-   /* @Override
-    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        super.onLayout(changed, left, top, right, bottom);
-        *//*x = Math.abs((getLeft() - getRight()) / 2f) - (paint.measureText(text) / 2f);
-        y = Math.abs((getTop() + fontSize));*//*
+    @Override
+    public void onGlobalLayout() {
+        getViewTreeObserver().removeOnGlobalLayoutListener(this);
+        FrameLayout.LayoutParams params =
+                new FrameLayout.LayoutParams((int) (textBounds.width() +
+                        convertDpToPixel(24, getContext())),
+                        (int) (textBounds.height() * 2 + convertDpToPixel(32, getContext())));
+        setLayoutParams(params);
 
-        shaderY1 = y + fontSize + 25;
-        shaderY2 = y - (fontSize);
-        textShader = new LinearGradient(x + (paint.measureText(text) / 2f), shaderY1, x + (paint.measureText(text) / 2f), shaderY2,
+        xCurrent = getLeft() + convertDpToPixel(8, getContext());
+        yCurrent = getTop() + textBounds.height() + convertDpToPixel(8, getContext());
+
+        float shaderY1 = yCurrent + textBounds.height() + convertDpToPixel(16, getContext());
+        float shaderY2 = yCurrent - (textBounds.height());
+
+        textShader = new LinearGradient((int) (xCurrent + textBounds.width() / 2),
+                shaderY1,
+                (int) (xCurrent + textBounds.width() / 2),
+                shaderY2,
                 new int[]{Color.TRANSPARENT, Color.WHITE},
                 new float[]{0, 1}, Shader.TileMode.CLAMP);
-    }*/
-
-    /*@Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int parentWidth = MeasureSpec.getSize(widthMeasureSpec);
-        int parentHeight = MeasureSpec.getSize(heightMeasureSpec);
-        Log.d("LOG_TAG", "widthMeasureSpecc " + parentWidth);
-        Log.d("LOG_TAG", "heightMeasureSpec= " + parentHeight);
-        this.setMeasuredDimension(parentWidth/2, parentHeight);
-        this.setLayoutParams(new RelativeLayout.LayoutParams((int)(parentWidth/2),parentHeight / 3));
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-    }*/
-
+        secondTextPaint.setShader(textShader);
+    }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        canvas.drawColor(Color.YELLOW);
-        canvas.drawRect(getLeft(),getTop(),getRight(),yCurrent + convertDpToPixel(8,getContext()),bgPaint);
-
-        paint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.BOLD));
+        canvas.drawColor(ContextCompat.getColor(getContext(), R.color.counter_outside_center_element));
+        canvas.drawRect(getLeft(), getTop(), getRight(), yCurrent + convertDpToPixel(8, getContext()), bgPaint);
         canvas.drawText(textCurrent, xCurrent, yCurrent, paint);
 
-        paint.setShader(textShader);
-        canvas.drawText(textNext, x,
-                y + fontSize + 25, paint);
-        canvas.drawText(textAfterNext, x, y + 2 * fontSize + 50, paint);
+        canvas.drawText(textNext, xCurrent,
+                yCurrent + textBounds.height() + convertDpToPixel(16, getContext()),
+                secondTextPaint);
+        canvas.drawText(textAfterNext, xCurrent,
+                yCurrent + 2 * (textBounds.height() + convertDpToPixel(16, getContext())),
+                secondTextPaint);
     }
 
     public void animateChange() {
@@ -141,7 +121,7 @@ public class MyTv extends View {
                 @Override
                 public void run() {
                     yCurrent -= 6;
-                    if (y >= -fontSize) {
+                    if (yCurrent >= -convertDpToPixel(8, getContext())) {
                         invalidate();
                         postDelayed(this, 1);
                     } else {
@@ -166,7 +146,6 @@ public class MyTv extends View {
     }
 
     public static int convertSpToPixels(float sp, Context context) {
-        int px = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp, context.getResources().getDisplayMetrics());
-        return px;
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp, context.getResources().getDisplayMetrics());
     }
 }
